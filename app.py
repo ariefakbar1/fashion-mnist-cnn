@@ -13,6 +13,46 @@ st.set_page_config(
 )
 
 # =============================
+# LANGUAGE SELECTION
+# =============================
+language = st.sidebar.selectbox(
+    "🌐 Language / Bahasa",
+    ("English", "Bahasa Indonesia")
+)
+
+# =============================
+# TEXT DICTIONARY
+# =============================
+text = {
+    "English": {
+        "title": "👕 Fashion Image Classifier",
+        "subtitle": "Upload a clothing image and get an instant prediction using deep learning",
+        "about": "ℹ️ About This App",
+        "about_text": """
+This web application uses a **Convolutional Neural Network (CNN)**  
+to classify clothing images into **10 categories**.
+""",
+        "upload": "📤 Upload clothing image",
+        "uploaded": "Uploaded Image",
+        "prediction": "Prediction",
+        "confidence": "Confidence"
+    },
+    "Bahasa Indonesia": {
+        "title": "👕 Klasifikasi Citra Pakaian",
+        "subtitle": "Unggah gambar pakaian dan dapatkan prediksi menggunakan deep learning",
+        "about": "ℹ️ Tentang Aplikasi",
+        "about_text": """
+Aplikasi web ini menggunakan **Convolutional Neural Network (CNN)**  
+untuk mengklasifikasikan gambar pakaian ke dalam **10 kategori**.
+""",
+        "upload": "📤 Unggah gambar pakaian",
+        "uploaded": "Gambar yang diunggah",
+        "prediction": "Hasil Prediksi",
+        "confidence": "Tingkat Keyakinan"
+    }
+}
+
+# =============================
 # CUSTOM CSS
 # =============================
 st.markdown("""
@@ -60,29 +100,23 @@ class_names = [
 # =============================
 # HEADER
 # =============================
-st.markdown("<div class='title'>👕 Fashion Image Classifier</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='title'>{text[language]['title']}</div>", unsafe_allow_html=True)
 st.markdown(
-    "<div class='subtitle'>Upload an image of clothing and get an instant prediction using deep learning</div>",
+    f"<div class='subtitle'>{text[language]['subtitle']}</div>",
     unsafe_allow_html=True
 )
 
 # =============================
 # SIDEBAR
 # =============================
-st.sidebar.title("ℹ️ About This App")
-st.sidebar.markdown("""
-This web application uses a **Convolutional Neural Network (CNN)**  
-to classify clothing images into **10 categories**.
-
-**Supported images:** JPG, PNG  
-**Image size:** Automatically resized  
-""")
+st.sidebar.title(text[language]["about"])
+st.sidebar.markdown(text[language]["about_text"])
 
 # =============================
 # UPLOAD IMAGE
 # =============================
 uploaded_file = st.file_uploader(
-    "📤 Upload clothing image",
+    text[language]["upload"],
     type=["jpg", "jpeg", "png"]
 )
 
@@ -91,7 +125,7 @@ if uploaded_file is not None:
     image = image.resize((28, 28))
 
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.image(image, caption="Uploaded Image", width=150)
+    st.image(image, caption=text[language]["uploaded"], width=150)
 
     img_array = np.array(image) / 255.0
     img_array = img_array.reshape(1, 28, 28, 1)
@@ -101,11 +135,11 @@ if uploaded_file is not None:
     confidence = np.max(prediction) * 100
 
     st.markdown(
-        f"<div class='prediction'>Prediction: {predicted_class}</div>",
+        f"<div class='prediction'>{text[language]['prediction']}: {predicted_class}</div>",
         unsafe_allow_html=True
     )
     st.markdown(
-        f"<p>Confidence: <b>{confidence:.2f}%</b></p>",
+        f"<p>{text[language]['confidence']}: <b>{confidence:.2f}%</b></p>",
         unsafe_allow_html=True
     )
 

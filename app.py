@@ -7,10 +7,6 @@ from PIL import Image
 # PAGE CONFIG
 # =============================
 st.set_page_config(
-    menu = st.sidebar.radio(
-    "Menu",
-    ["Home", "Profile"]
-    )
     page_title="Fashion Image Classifier",
     page_icon="👕",
     layout="centered"
@@ -119,7 +115,7 @@ st.sidebar.markdown(text[language]["about_text"])
 # =============================
 # UPLOAD IMAGE
 # =============================
-if menu == "Home":
+
 uploaded_file = st.file_uploader(
     text[language]["upload"],
     type=["jpg", "jpeg", "png"]
@@ -149,20 +145,7 @@ if uploaded_file is not None:
     )
 
     st.markdown("</div>", unsafe_allow_html=True)
-if menu == "Profile":
-    st.title("Profile")
 
-    st.write("### About This Application")
-    st.write(
-        "This web application demonstrates the use of a Convolutional Neural Network (CNN) "
-        "for classifying clothing images using the Fashion-MNIST dataset."
-    )
-
-    st.write("### About the Developer")
-    st.write(
-        "The developer is interested in Artificial Intelligence, Deep Learning, "
-        "and Computer Vision, with a focus on practical applications."
-    )
 
     st.write("### Technologies Used")
     st.write("- Python")

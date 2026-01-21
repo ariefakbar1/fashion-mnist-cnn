@@ -119,8 +119,8 @@ if menu == "Profile":
         "and Computer Vision, focusing on practical applications."
     )
 
-    st.subheader("Technologies Used")
-    st.write("- Python")
-    st.write("- TensorFlow / Keras")
-    st.write("- Convolutional Neural Network (CNN)")
-    st.write("- Streamlit")
+st.subheader("Technologies Used")
+st.write("- Python")
+st.write("- TensorFlow / Keras")
+st.write("- Convolutional Neural Network (CNN)")
+st.write("- Streamlit")

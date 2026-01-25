@@ -1,85 +1,113 @@
 import streamlit as st
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 from PIL import Image
+import matplotlib.pyplot as plt
+from tensorflow.keras.datasets import fashion_mnist
 
-# ================= CONFIG =================
-st.set_page_config(page_title="Fashion Image Classifier")
+# =========================
+# CONFIG
+# =========================
+st.set_page_config(
+    page_title="Fashion Image Classifier",
+    layout="centered"
+)
 
-# ================= SIDEBAR =================
-menu = st.sidebar.radio("Menu", ["Home", "Profile"])
-language = st.sidebar.selectbox("Language / Bahasa", ["English", "Bahasa Indonesia"])
+# =========================
+# LANGUAGE
+# =========================
+lang = st.sidebar.selectbox("🌐 Language / Bahasa", ["English", "Bahasa"])
 
-# ================= TEXT =================
-text = {
+TEXT = {
     "English": {
         "title": "Fashion Image Classifier",
         "upload": "Upload clothing image",
-        "prediction": "Prediction",
-        "confidence": "Confidence",
-        "about_app": "About This Application",
-        "about_app_text": "This application uses a Convolutional Neural Network (CNN) to classify clothing images from the Fashion-MNIST dataset.",
-        "about_dev": "About the Developer",
-        "about_dev_text": "The developer is interested in Artificial Intelligence, Deep Learning, and Computer Vision.",
-        "tech": "Technologies Used"
+        "predict": "Prediction Result",
+        "confidence": "Prediction Confidence",
+        "dataset": "Dataset Preview (Fashion-MNIST)",
+        "desc": "Upload an image of clothing to classify it.",
     },
-    "Bahasa Indonesia": {
+    "Bahasa": {
         "title": "Klasifikasi Citra Pakaian",
         "upload": "Unggah gambar pakaian",
-        "prediction": "Hasil Prediksi",
-        "confidence": "Tingkat Keyakinan",
-        "about_app": "Tentang Aplikasi",
-        "about_app_text": "Aplikasi ini menggunakan Convolutional Neural Network (CNN) untuk mengklasifikasikan citra pakaian dari dataset Fashion-MNIST.",
-        "about_dev": "Tentang Pengembang",
-        "about_dev_text": "Pengembang memiliki minat pada Artificial Intelligence, Deep Learning, dan Computer Vision.",
-        "tech": "Teknologi yang Digunakan"
+        "predict": "Hasil Prediksi",
+        "confidence": "Tingkat Kepercayaan",
+        "dataset": "Pratinjau Dataset (Fashion-MNIST)",
+        "desc": "Unggah gambar pakaian untuk diklasifikasikan.",
     }
 }
 
-# ================= LOAD MODEL =================
-model = tf.keras.models.load_model("fashion_mnist_cnn.h5")
+t = TEXT[lang]
 
+# =========================
+# LOAD MODEL
+# =========================
+@st.cache_resource
+def load_model():
+    return tf.keras.models.load_model("fashion_mnist_cnn.h5")
+
+model = load_model()
+
+# =========================
+# CLASS NAMES
+# =========================
 class_names = [
-    "T-shirt / Top", "Trouser", "Pullover", "Dress", "Coat",
+    "T-shirt/Top", "Trouser", "Pullover", "Dress", "Coat",
     "Sandal", "Shirt", "Sneaker", "Bag", "Ankle Boot"
 ]
 
-# ================= HOME =================
-if menu == "Home":
-    st.title(text[language]["title"])
+# =========================
+# TITLE
+# =========================
+st.title(t["title"])
+st.write(t["desc"])
 
-    uploaded_file = st.file_uploader(
-        text[language]["upload"],
-        type=["jpg", "jpeg", "png"]
-    )
+# =========================
+# IMAGE UPLOAD
+# =========================
+uploaded_file = st.file_uploader(
+    t["upload"],
+    type=["jpg", "jpeg", "png"]
+)
 
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file).convert("L")
-        image = image.resize((28, 28))
-        st.image(image, width=150)
+if uploaded_file:
+    image = Image.open(uploaded_file).convert("L")
+    image = image.resize((28, 28))
+    st.image(image, caption="Uploaded Image", width=200)
 
-        img_array = np.array(image) / 255.0
-        img_array = img_array.reshape(1, 28, 28, 1)
+    img_array = np.array(image) / 255.0
+    img_array = img_array.reshape(1, 28, 28, 1)
 
-        prediction = model.predict(img_array)
-        predicted_class = class_names[int(np.argmax(prediction))]
-        confidence = float(np.max(prediction) * 100)
+    prediction = model.predict(img_array)
+    predicted_class = np.argmax(prediction)
+    confidence = np.max(prediction)
 
-        st.success(text[language]["prediction"] + ": " + predicted_class)
-        st.write(text[language]["confidence"] + ": " + str(round(confidence, 2)) + "%")
+    st.subheader(t["predict"])
+    st.success(class_names[predicted_class])
 
-# ================= PROFILE =================
-if menu == "Profile":
-    st.title("Profile")
+    st.subheader(t["confidence"])
+    st.progress(int(confidence * 100))
+    st.write(f"{confidence*100:.2f}%")
 
-    st.subheader(text[language]["about_app"])
-    st.write(text[language]["about_app_text"])
+# =========================
+# DATASET PREVIEW (FEATURE 1)
+# =========================
+st.markdown("---")
+st.subheader(t["dataset"])
 
-    st.subheader(text[language]["about_dev"])
-    st.write(text[language]["about_dev_text"])
+(_, _), (x_test, y_test) = fashion_mnist.load_data()
 
-    st.subheader(text[language]["tech"])
-    st.write("Python")
-    st.write("TensorFlow / Keras")
-    st.write("Convolutional Neural Network (CNN)")
-    st.write("Streamlit")
+cols = st.columns(4)
+for i in range(12):
+    with cols[i % 4]:
+        st.image(
+            x_test[i],
+            caption=class_names[y_test[i]],
+            width=120
+        )
+
+# =========================
+# FOOTER
+# =========================
+st.markdown("---")
+st.caption("CNN-based Image Classification | Fashion-MNIST Dataset")

@@ -1,43 +1,23 @@
 import streamlit as st
-import numpy as np
 import tensorflow as tf
+import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
-from tensorflow.keras.datasets import fashion_mnist
+import os
+import random
 
 # =========================
 # CONFIG
 # =========================
 st.set_page_config(
     page_title="Fashion Image Classifier",
+    page_icon="👕",
     layout="centered"
 )
 
-# =========================
-# LANGUAGE
-# =========================
-lang = st.sidebar.selectbox("🌐 Language / Bahasa", ["English", "Indonesia"])
-
-TEXT = {
-    "English": {
-        "title": "Fashion Image Classifier",
-        "upload": "Upload clothing image",
-        "predict": "Prediction Result",
-        "confidence": "Prediction Confidence",
-        "dataset": "Dataset Preview (Fashion-MNIST)",
-        "desc": "Upload an image of clothing to classify it.",
-    },
-    "Bahasa": {
-        "title": "Klasifikasi Citra Pakaian",
-        "upload": "Unggah gambar pakaian",
-        "predict": "Hasil Prediksi",
-        "confidence": "Tingkat Kepercayaan",
-        "dataset": "Pratinjau Dataset (Fashion-MNIST)",
-        "desc": "Unggah gambar pakaian untuk diklasifikasikan.",
-    }
-}
-
-t = TEXT[lang]
+CLASS_NAMES = [
+    "T-shirt", "Trouser", "Pullover", "Dress", "Coat",
+    "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"
+]
 
 # =========================
 # LOAD MODEL
@@ -49,65 +29,89 @@ def load_model():
 model = load_model()
 
 # =========================
-# CLASS NAMES
+# LANGUAGE
 # =========================
-class_names = [
-    "T-shirt/Top", "Trouser", "Pullover", "Dress", "Coat",
-    "Sandal", "Shirt", "Sneaker", "Bag", "Ankle Boot"
-]
+lang = st.sidebar.selectbox("🌐 Language / Bahasa", ["English", "Bahasa Indonesia"])
 
-# =========================
-# TITLE
-# =========================
-st.title(t["title"])
-st.write(t["desc"])
-
-# =========================
-# IMAGE UPLOAD
-# =========================
-uploaded_file = st.file_uploader(
-    t["upload"],
-    type=["jpg", "jpeg", "png"]
-)
-
-if uploaded_file:
-    image = Image.open(uploaded_file).convert("L")
-    image = image.resize((28, 28))
-    st.image(image, caption="Uploaded Image", width=200)
-
-    img_array = np.array(image) / 255.0
-    img_array = img_array.reshape(1, 28, 28, 1)
-
-    prediction = model.predict(img_array)
-    predicted_class = np.argmax(prediction)
-    confidence = np.max(prediction)
-
-    st.subheader(t["predict"])
-    st.success(class_names[predicted_class])
-
-    st.subheader(t["confidence"])
-    st.progress(int(confidence * 100))
-    st.write(f"{confidence*100:.2f}%")
+TEXT = {
+    "title": "Fashion Image Classifier" if lang == "English" else "Klasifikasi Gambar Fashion",
+    "upload": "Upload clothing image" if lang == "English" else "Upload gambar pakaian",
+    "dataset": "Dataset Explorer" if lang == "English" else "Eksplorasi Dataset",
+    "prediction": "Prediction Result" if lang == "English" else "Hasil Prediksi",
+    "confidence": "Prediction Confidence" if lang == "English" else "Tingkat Keyakinan Model"
+}
 
 # =========================
-# DATASET PREVIEW (FEATURE 1)
+# HEADER
 # =========================
-st.markdown("---")
-st.subheader(t["dataset"])
+st.title(TEXT["title"])
+st.write("CNN-based image classification using Fashion-MNIST")
 
-(_, _), (x_test, y_test) = fashion_mnist.load_data()
-
-cols = st.columns(4)
-for i in range(12):
-    with cols[i % 4]:
-        st.image(
-            x_test[i],
-            caption=class_names[y_test[i]],
-            width=120
-        )
+menu = st.sidebar.radio("Menu", ["Home", "Dataset", "Profile"])
 
 # =========================
-# FOOTER
+# HOME
 # =========================
-st.markdown("---")
-st.caption("CNN-based Image Classification | Fashion-MNIST Dataset")
+if menu == "Home":
+    uploaded_file = st.file_uploader(
+        TEXT["upload"],
+        type=["jpg", "png", "jpeg"]
+    )
+
+    if uploaded_file:
+        image = Image.open(uploaded_file).convert("L")
+        st.image(image, caption="Uploaded Image", use_column_width=True)
+
+        img = image.resize((28, 28))
+        img_array = np.array(img) / 255.0
+        img_array = img_array.reshape(1, 28, 28, 1)
+
+        predictions = model.predict(img_array)[0]
+
+        # Top 3 Prediction
+        top3_idx = predictions.argsort()[-3:][::-1]
+
+        st.subheader(TEXT["prediction"])
+        for i in top3_idx:
+            st.write(f"**{CLASS_NAMES[i]}** : {predictions[i]*100:.2f}%")
+
+        # Confidence Bar Chart
+        st.subheader(TEXT["confidence"])
+        chart_data = {
+            CLASS_NAMES[i]: float(predictions[i])
+            for i in top3_idx
+        }
+        st.bar_chart(chart_data)
+
+# =========================
+# DATASET EXPLORER
+# =========================
+elif menu == "Dataset":
+    st.subheader(TEXT["dataset"])
+
+    dataset_path = "dataset"
+    selected_class = st.selectbox("Choose Class", CLASS_NAMES)
+
+    class_path = os.path.join(dataset_path, selected_class)
+
+    if os.path.exists(class_path):
+        images = os.listdir(class_path)
+        sample_images = random.sample(images, min(6, len(images)))
+
+        cols = st.columns(3)
+        for idx, img_name in enumerate(sample_images):
+            img = Image.open(os.path.join(class_path, img_name))
+            cols[idx % 3].image(img, caption=selected_class, use_column_width=True)
+    else:
+        st.warning("Dataset folder not found!")
+
+# =========================
+# PROFILE
+# =========================
+elif menu == "Profile":
+    st.subheader("👤 Developer Profile")
+
+    st.write("**Name:** Muhammad Arief Akbar")
+    st.write("**Project:** Fashion Image Classification using CNN")
+    st.write("**Technology:** Deep Learning, CNN, TensorFlow, Streamlit")
+    st.write("**Dataset:** Fashion-MNIST (Image Version)")

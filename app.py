@@ -16,7 +16,7 @@ st.set_page_config(
 # =========================
 # LANGUAGE
 # =========================
-lang = st.sidebar.selectbox("🌐 Language / Bahasa", ["English", "Bahasa"])
+lang = st.sidebar.selectbox("🌐 Language / Bahasa", ["English", "Indonesia"])
 
 TEXT = {
     "English": {

@@ -3,124 +3,126 @@ import numpy as np
 from PIL import Image
 import tensorflow as tf
 
-# ===============================
+# =========================
 # PAGE CONFIG
-# ===============================
+# =========================
 st.set_page_config(
     page_title="Fashion Image Classifier",
     page_icon="👕",
-    layout="wide"
+    layout="centered"
 )
 
-# ===============================
-# LANGUAGE TEXT
-# ===============================
-texts = {
-    "id": {
+# =========================
+# LANGUAGE STATE
+# =========================
+if "lang" not in st.session_state:
+    st.session_state.lang = "EN"
+
+def set_lang(lang):
+    st.session_state.lang = lang
+
+# =========================
+# TEXT DICTIONARY
+# =========================
+TEXT = {
+    "EN": {
         "title": "Fashion Image Classifier",
-        "subtitle": "Klasifikasi citra pakaian berbasis CNN (Fashion-MNIST)",
-        "upload": "Unggah gambar pakaian",
-        "predict": "Hasil Prediksi",
-        "dataset_title": "Dataset Explorer",
-        "dataset_desc": "Berikut contoh citra Fashion-MNIST (grayscale 28×28).",
-        "profile": "Profil Aplikasi",
-        "profile_desc": "Aplikasi klasifikasi citra pakaian menggunakan Convolutional Neural Network (CNN)."
-    },
-    "en": {
-        "title": "Fashion Image Classifier",
-        "subtitle": "CNN-based clothing image classification (Fashion-MNIST)",
+        "desc": "CNN-based clothing image classification using Fashion-MNIST",
         "upload": "Upload clothing image",
-        "predict": "Prediction Result",
-        "dataset_title": "Dataset Explorer",
-        "dataset_desc": "Sample Fashion-MNIST images (grayscale 28×28).",
-        "profile": "Application Profile",
-        "profile_desc": "Clothing image classification application using Convolutional Neural Network (CNN)."
+        "result": "Prediction Result",
+        "confidence": "Prediction Confidence",
+        "dataset": "Dataset Explorer",
+        "dataset_desc": "Official Fashion-MNIST image samples",
+        "profile": "Profile",
+    },
+    "ID": {
+        "title": "Klasifikasi Citra Fashion",
+        "desc": "Klasifikasi citra pakaian berbasis CNN menggunakan Fashion-MNIST",
+        "upload": "Unggah gambar pakaian",
+        "result": "Hasil Prediksi",
+        "confidence": "Tingkat Keyakinan",
+        "dataset": "Eksplorasi Dataset",
+        "dataset_desc": "Contoh citra resmi dataset Fashion-MNIST",
+        "profile": "Profil",
     }
 }
 
-# ===============================
-# LANGUAGE SWITCH (FLAG)
-# ===============================
-if "lang" not in st.session_state:
-    st.session_state.lang = "id"
+T = TEXT[st.session_state.lang]
 
-col_lang1, col_lang2 = st.columns(2)
-with col_lang1:
-    if st.button("🇮🇩 Bahasa"):
-        st.session_state.lang = "id"
-with col_lang2:
-    if st.button("🇬🇧 English"):
-        st.session_state.lang = "en"
+# =========================
+# SIDEBAR
+# =========================
+st.sidebar.title("Menu")
 
-lang = st.session_state.lang
-t = texts[lang]
+menu = st.sidebar.radio(
+    "Navigation",
+    ["Home", "Dataset", "Profile"]
+)
 
-# ===============================
+st.sidebar.markdown("### Language")
+col1, col2 = st.sidebar.columns(2)
+with col1:
+    st.button("🇬🇧", on_click=set_lang, args=("EN",))
+with col2:
+    st.button("🇮🇩", on_click=set_lang, args=("ID",))
+
+# =========================
 # LOAD MODEL
-# ===============================
+# =========================
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model("fashion_mnist_cnn.h5")
 
 model = load_model()
 
-# ===============================
-# CLASS LABELS
-# ===============================
-class_names = [
-    "T-shirt / Top",
-    "Trouser",
-    "Pullover",
-    "Dress",
-    "Coat",
-    "Sandal",
-    "Shirt",
-    "Sneaker",
-    "Bag",
-    "Ankle Boot"
+CLASS_NAMES = [
+    "T-shirt / Top", "Trouser", "Pullover", "Dress", "Coat",
+    "Sandal", "Shirt", "Sneaker", "Bag", "Ankle Boot"
 ]
 
-# ===============================
-# SIDEBAR MENU
-# ===============================
-menu = st.sidebar.radio(
-    "Menu",
-    ["Home", "Dataset", "Profile"]
-)
-
-# ===============================
+# =========================
 # HOME
-# ===============================
+# =========================
 if menu == "Home":
-    st.title(t["title"])
-    st.subheader(t["subtitle"])
+    st.title(T["title"])
+    st.write(T["desc"])
 
     uploaded_file = st.file_uploader(
-        t["upload"],
-        type=["jpg", "jpeg", "png"]
+        T["upload"],
+        type=["jpg", "png", "jpeg"]
     )
 
     if uploaded_file:
         image = Image.open(uploaded_file).convert("L")
-        st.image(image, caption="Input Image", width=200)
+        st.image(image, caption="Uploaded Image", width=220)
 
         img = image.resize((28, 28))
-        img_array = np.array(img) / 255.0
-        img_array = img_array.reshape(1, 28, 28, 1)
+        img = np.array(img) / 255.0
+        img = img.reshape(1, 28, 28, 1)
 
-        prediction = model.predict(img_array)
-        predicted_class = class_names[np.argmax(prediction)]
-        confidence = np.max(prediction)
+        preds = model.predict(img)[0]
+        idx = np.argmax(preds)
+        label = CLASS_NAMES[idx]
+        confidence = preds[idx] * 100
 
-        st.success(f"{t['predict']}: **{predicted_class}**")
-        st.write(f"Confidence: **{confidence:.2f}**")
+        st.subheader(T["result"])
+        st.success(label)
 
-# ===============================
-# DATASET EXPLORER (NO LOCAL FOLDER)
-# ===============================
+        st.subheader(T["confidence"])
+        st.progress(int(confidence))
+        st.write(f"**{confidence:.2f}%**")
+
+# =========================
+# DATASET PAGE
+# =========================
 elif menu == "Dataset":
-    st.title(t["dataset_title"])
-    st.write(t["dataset_desc"])
+    st.title(T["dataset"])
+    st.write(T["dataset_desc"])
+
+    st.markdown(
+        "🔗 **Official Source:** "
+        "[Zalando Fashion-MNIST](https://github.com/zalandoresearch/fashion-mnist)"
+    )
 
     sample_images = {
         "T-shirt / Top": "https://raw.githubusercontent.com/zalandoresearch/fashion-mnist/master/doc/img/0.png",
@@ -135,32 +137,23 @@ elif menu == "Dataset":
         "Ankle Boot": "https://raw.githubusercontent.com/zalandoresearch/fashion-mnist/master/doc/img/9.png",
     }
 
-    selected_class = st.selectbox("Choose class", list(sample_images.keys()))
-    st.image(
-        sample_images[selected_class],
-        caption=selected_class,
-        width=200
-    )
+    selected = st.selectbox("Choose Class", list(sample_images.keys()))
+    st.image(sample_images[selected], caption=selected, width=200)
 
-# ===============================
+    st.info("These are **official visual samples** from Fashion-MNIST.")
+
+# =========================
 # PROFILE
-# ===============================
+# =========================
 elif menu == "Profile":
-    st.title(t["profile"])
-    st.write(t["profile_desc"])
+    st.title(T["profile"])
 
     st.markdown("""
-    **Model**: Convolutional Neural Network (CNN)  
-    **Dataset**: Fashion-MNIST  
-    **Image Size**: 28 × 28 (Grayscale)  
-    **Classes**: 10 kategori pakaian  
-    **Deployment**: Streamlit Cloud
+    **Name:** Muhammad Arief Akbar  
+    **Field:** Informatics – Artificial Intelligence  
+    **Model:** Convolutional Neural Network (CNN)  
+    **Dataset:** Fashion-MNIST (Zalando Research)  
+    **Deployment:** Streamlit Cloud
     """)
 
-    st.info("Aplikasi ini bersifat umum dan dapat digunakan oleh siapa saja.")
-
-# ===============================
-# FOOTER
-# ===============================
-st.markdown("---")
-st.caption("© 2026 Fashion Image Classifier | CNN + Streamlit")
+    st.success("✔ Application ready for academic presentation")
